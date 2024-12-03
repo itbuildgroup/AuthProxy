@@ -6,9 +6,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index'),
-      name: 'itbuild-auth-sdk',
+      name: 'auth-proxy-sdk',
       formats: ['cjs'],
-      fileName: `itbuild_auth`,
+      fileName: `auth_proxy`,
     },
     rollupOptions: {
       external: [],

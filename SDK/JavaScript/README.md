@@ -1,5 +1,5 @@
-# ItBuild auth (JavaScript)
-Universal package for itbuild.app authentication process.
+# Auth proxy SDK (JavaScript)
+Universal package for authentication process.
 
 ## Configuration:
 
@@ -7,8 +7,8 @@ process.env variables are used for configuration:
 
 ```
 PROJECT_ID=test
-AUTH_API_URL=https://telestore.itbuild.app:8081/
-USER_KEY=532be8142c2680590828a64ad46c64bbbe50709de1f23d52cdd69187ad9d62eb
+AUTH_API_URL=https://test-project.api/
+USER_KEY=532be8142c2680590828a64ad46c64bbbe50709de1f23d52cdd69187ad9d62e2
 ```
 
 ## Usage

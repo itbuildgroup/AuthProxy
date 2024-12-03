@@ -1,8 +1,8 @@
 {
-  "name": "@itbuildgroup/itbuild.auth",
+  "name": "@itbuildgroup/auth.proxy",
   "version": "1.0.10",
   "type": "commonjs",
-  "main": "dist/itbuild_auth.js",
+  "main": "dist/auth_proxy.js",
   "repository": {
     "type:": "git",
     "url": "git+https://github.com/itbuildgroup/ItBuild.Auth.JS.git"
@@ -15,9 +15,9 @@
   ],
   "keywords": [],
   "author": "itbuildgroup",
-  "types": "./dist/itbuild_auth.d.ts",
+  "types": "./dist/auth_proxy.d.ts",
   "license": "Apache-2.0",
-  "description": "Universal package for itbuild.app authentication process.",
+  "description": "Universal package for authentication process.",
   "dependencies": {
     "buffer": "^6.0.3",
     "elliptic": "^6.5.4",
