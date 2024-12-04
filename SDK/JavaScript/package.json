@@ -5,7 +5,7 @@
   "main": "dist/auth_proxy.js",
   "repository": {
     "type:": "git",
-    "url": "git+https://github.com/itbuildgroup/ItBuild.Auth.JS.git"
+    "url": "git+https://github.com/itbuildgroup/AuthProxy.git"
   },
   "scripts": {
     "build": "vite build"
@@ -34,7 +34,7 @@
     "vite-plugin-dts": "^4.3.0"
   },
   "bugs": {
-    "url": "https://github.com/itbuildgroup/ItBuild.Auth.JS/issues"
+    "url": "https://github.com/itbuildgroup/AuthProxy/issues"
   },
-  "homepage": "https://github.com/itbuildgroup/ItBuild.Auth.JS#readme"
+  "homepage": "https://github.com/itbuildgroup/AuthProxy/blob/main/SDK/JavaScript/README.md"
 }

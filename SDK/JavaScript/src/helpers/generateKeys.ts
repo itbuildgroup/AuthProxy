@@ -8,7 +8,10 @@ const generateKeys = (passKey: string, challengeBuf: Buffer) => {
   const public_key = key.getPublic();
   const signature = key.sign(challengeBuf).toBytes();
 
-  return { public_key: coerceToBase64Url(public_key), signature: coerceToBase64Url(signature) };
+  return {
+    signature: coerceToBase64Url(signature),
+    public_key: coerceToBase64Url(public_key)
+  };
 };
 
 export default generateKeys;

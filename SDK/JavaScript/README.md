@@ -3,12 +3,10 @@ Universal package for authentication process.
 
 ## Configuration:
 
-process.env variables are used for configuration:
+process.env variable are used for configuration:
 
 ```
-PROJECT_ID=test
 AUTH_API_URL=https://test-project.api/
-USER_KEY=532be8142c2680590828a64ad46c64bbbe50709de1f23d52cdd69187ad9d62e2
 ```
 
 ## Usage
@@ -18,9 +16,13 @@ USER_KEY=532be8142c2680590828a64ad46c64bbbe50709de1f23d52cdd69187ad9d62e2
 The `signInUserKey` function is used to obtain the cookie:
 
 ```ts
-// Returns a string containing the session ID
-// null in case of an error
-const sessionId = await signInUserKey();
+var client = new AuthProxyClient();
+
+await client.signInUserKey(`<YOUR_USER_KEY>`);
+
+// Returns sessionId string if session exists
+// null if session not found
+const sessionId = client.GetSessionId();
 ```
 
 After that, sessionId can be used to authorize requests.
@@ -34,16 +36,18 @@ To restore a key, you need to perform the following sequence of requests:
 3. Create a new key
 
 ```ts
+var client = new AuthProxyClient();
+
 // Sends a code to the email associated with the phone number
 // Returns a status string "Success"
 // null in case of an error
-const result = await resetPassword('<PHONE_NUMBER>');
+const result = await client.ResetPassword('<PHONE_NUMBER>');
 
 // Initializes the creation of a new key, sends an OTP code to the associated phone number, and returns data for creating a new key
 // null in case of an error
-const authOptions = await initializeNewKey({ code: '<EMAIL_CODE>' });
+const authOptions = await client.InitializeNewKey('<EMAIL_CODE>');
 
 // Returns the user key, which is set in USER_KEY to obtain sessions
 // null in case of an error
-const userKey = await createUserKey('<OTP_CODE>', authOptions);
+const userKey = await client.CreateUserKey('<OTP_CODE>', authOptions);
 ```

@@ -113,7 +113,7 @@ export interface AuthIn {
   signature?: string | null;
 }
 
-export interface GetInfo {
+export interface ServerInfo {
   project_name: string;
   version: string;
   utc_time: Date;

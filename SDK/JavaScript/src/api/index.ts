@@ -1,10 +1,18 @@
 import ApiRequest from "./api-request";
-import { AuthIn, AuthOptions, LoginInfo, TelegramUserInfo, UserLoginLog, UserSessions, GetInfo, UserKey } from "./model";
-
-const projectId = process.env['PROJECT_ID'];
+import { AuthIn, AuthOptions, LoginInfo, TelegramUserInfo, UserLoginLog, UserSessions, ServerInfo, UserKey } from "./model";
 
 export const apiGetInfo = () =>
-  ApiRequest<GetInfo>("auth/v1/get_info", {
+  ApiRequest<ServerInfo>("auth/v1/get_info", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+export const apiLoginLog = () =>
+  ApiRequest<UserLoginLog[]>("auth/v1/login_log", {
+    method: "GET",
     credentials: "include",
     headers: {
       Accept: "application/json"
@@ -20,10 +28,11 @@ export const apiTelegramLogin = (data: TelegramUserInfo) => {
   });
 
   return ApiRequest<string>(`auth/v1/telegram?${queryParams.toString()}`, {
+    method: "GET",
     credentials: "include",
     headers: {
       Accept: "application/json",
-      device_guid: projectId
+      device_guid: null
     }
   });
 };
@@ -32,6 +41,7 @@ export const apiLoginOptions = () =>
   ApiRequest<AuthOptions>(
     "auth/v1/login_options",
     {
+      method: "GET",
       credentials: "include",
       headers: {
         Accept: "application/json"
@@ -49,7 +59,7 @@ export const apiLogin = (data: LoginInfo) =>
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        device_guid: projectId
+        device_guid: null
       }
     }
   );
@@ -58,6 +68,7 @@ export const ResetPassword = (phone: string) =>
   ApiRequest<string>(
     `auth/v1/reset_password?phone=${phone}`,
     {
+      method: "GET",
       credentials: "include",
       headers: {
         Accept: "application/json"
@@ -65,14 +76,14 @@ export const ResetPassword = (phone: string) =>
     }
   );
 
-export const apiRegisterOptions = (emailCode?: string | null, sid?: string | null) =>
+export const apiRegisterOptions = (emailCode?: string | null) =>
   ApiRequest<AuthOptions>(
     `auth/v1/register_options${emailCode ? `?code=${emailCode}` : ""}`,
     {
+      method: "GET",
       credentials: "include",
       headers: {
-        Accept: "application/json",
-        Cookie: `sid=${sid}`
+        Accept: "application/json"
       }
     }
   );
@@ -131,6 +142,16 @@ export const apiCloseSessions = (id?: number) => {
 
 export const apiUserKeys = () =>
   ApiRequest<UserKey[]>(`auth/v1/user_keys`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+  });
+
+export const apiLogout = () =>
+  ApiRequest<string>(`auth/v1/logout`, {
     method: "GET",
     credentials: "include",
     headers: {
