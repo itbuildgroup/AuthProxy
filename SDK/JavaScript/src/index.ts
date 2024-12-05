@@ -171,7 +171,6 @@ export class AuthProxyClient {
         return response.error;
     };
 
-
     /**
      * Close current session function
      * @returns string result on success
