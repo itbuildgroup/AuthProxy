@@ -1,188 +1,257 @@
 import base64ToUint8Array from "./utils/base64ToUint8Array";
 import generateKeys from "./helpers/generateKeys";
 import {
-    apiGetInfo,
-    apiLogin,
-    apiLoginLog,
-    apiLoginOptions,
-    apiLogout,
-    apiRegisterOptions,
-    RegisterKey,
-    ResetPassword
-} from "./api";
-import {
-    ServerInfo,
-    LoginInfo,
-    ErrorObject,
-    UserLoginLog,
-    AuthOptions
-} from "./api/model";
-import { setFetchSessionId } from "./api/api-request";
+  ServerInfo,
+  LoginInfo,
+  UserLoginLog,
+  AuthOptions,
+  ApiResponse,
+  ApiResponseExt
+} from "./model";
 import formatAsNumber from "./utils/formatAsNumber";
 import getRandomText from "./utils/getRandomText";
 import genSha256 from "./utils/genSha256";
 
 export class AuthProxyClient {
-    private sessionId: string | null = null;
+  public readonly BaseUrl: string = null;
+  private sessionId: string | null = null;
+  private deviceGuid: string | null = null;
 
-    /**
-     * Function to return AuthProxyClient sessionId
-     * To initialize new session execute {@link SignInUserKey}
-     * @returns sessionId string if session exists
-     * @returns `null` if session not found
-     */
-    public GetSessionId = (): string | null => this.sessionId;
+  constructor(baseUrl: string) {
+    this.BaseUrl = baseUrl;
+  }
 
-    /**
-     * Initialize new session using userKey
-     * @param userKey User's key
-     * @returns string result on success
-     * @returns `null` on error
-     */
-    public async SignInUserKey(userKey: string): Promise<string | null> {
-        if (!userKey.trim()) return null;
+  /**
+   * Function to return AuthProxyClient sessionId
+   * To initialize new session execute {@link SignInUserKey}
+   * @returns sessionId string if session exists
+   * @returns `null` if session not found
+   */
+  public GetSessionId = (): string | null => this.sessionId;
 
-        const loginOptionResponse = await apiLoginOptions();
+  /**
+   * Initialize new session using userKey
+   * @param userKey User's key
+   * @returns string result `Success`/`Failure`
+   */
+  public async SignInUserKey(userKey: string): Promise<ApiResponse<string>> {
+    if (!userKey.trim()) {
+      return this.validationErrorResponse("User key must be not empty");
+    }
 
-        if (!loginOptionResponse.result) return null;
+    const loginOptionResponse = await this.ApiRequest<AuthOptions>(
+      "auth/v1/login_options",
+      {
+        method: "GET",
+      }
+    );
 
-        const authOptions = loginOptionResponse.result;
+    if (!loginOptionResponse.result) {
+      return {
+        result: null,
+        error: loginOptionResponse.error
+      };
+    }
 
-        const challengeBuf = base64ToUint8Array(authOptions.challenge) as Buffer;
+    const authOptions = loginOptionResponse.result;
 
-        const { signature, public_key } = generateKeys(userKey, challengeBuf);
+    const challengeBuf = base64ToUint8Array(authOptions.challenge) as Buffer;
 
-        const data: LoginInfo = {
-            challenge_id: authOptions.challenge_id,
-            credential: null,
-            public_key,
-            signature
-        };
+    const { signature, public_key } = generateKeys(userKey, challengeBuf);
 
-        const loginResponse = await apiLogin(data);
+    const data: LoginInfo = {
+      challenge_id: authOptions.challenge_id,
+      credential: null,
+      public_key,
+      signature
+    };
 
-        if (loginResponse.result && loginResponse.result !== "Failure") {
-            let sid = loginResponse.headers['set-cookie'].match(/sid=([^;]+)/)[1];
-            this.sessionId = sid;
-            setFetchSessionId(sid);
-
-            return loginResponse.result;
+    const loginResponse = await this.ApiRequest<string>(
+      "auth/v1/login",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          resolution: `${1}x${1}`,
+          device_guid: this.getDeviceGuid()
         }
+      }
+    );
 
-        return null;
-    };
-
-    /**
-     * Get server info
-     * @returns object of {@link ServerInfo} on success
-     * @returns object of {@link ErrorObject} on error
-     */
-    public async GetInfo(): Promise<ServerInfo | ErrorObject> {
-        const response = await apiGetInfo();
-
-        if (response.result || !response.error) {
-            return response.result;
-        };
-
-        return response.error;
+    if (loginResponse.result && loginResponse.result !== "Failure") {
+      let sid = loginResponse.headers['set-cookie'].match(/sid=([^;]+)/)[1];
+      this.sessionId = sid;
     }
 
-    /**
-     * Get last 100 login operations
-     * @returns array of {@link UserLoginLog} on success
-     * @returns object of {@link ErrorObject} on error
-     */
-    public async GetLoginLog(): Promise<UserLoginLog[] | ErrorObject> {
-        const response = await apiLoginLog();
+    return loginResponse;
+  };
 
-        if (response.result || !response.error) {
-            return response.result;
-        };
+  /**
+   * Get server info
+   * @returns object of {@link ServerInfo}
+   */
+  public async GetInfo(): Promise<ApiResponse<ServerInfo>> {
+    return await this.ApiRequest<ServerInfo>("auth/v1/get_info", {
+      method: "GET"
+    });
+  }
 
-        return response.error;
+  /**
+   * Get last 100 login operations
+   * @returns array of {@link UserLoginLog} objects
+   */
+  public async GetLoginLog(): Promise<ApiResponse<UserLoginLog[]>> {
+    return await this.ApiRequest<UserLoginLog[]>("auth/v1/login_log", {
+      method: "GET"
+    });
+  }
+
+  /**
+   * Call password reset, sends email code
+   * @param phone User's phone number
+   * @returns string result `Success`/`Failure`
+   */
+  public async ResetPassword(phone: string): Promise<ApiResponse<string>> {
+    if (!formatAsNumber(phone.trim())) {
+      return this.validationErrorResponse("Phone must be not empty");
     }
 
-    /**
-     * Call password reset, sends email code
-     * @param phone User's phone number
-     * @returns status string on success
-     * @returns `null` on error
-     */
-    async ResetPassword(phone: string): Promise<string | null> {
-        if (!formatAsNumber(phone.trim())) return null;
-
-        const response = await ResetPassword(phone);
-
-        if (response.result || response.result !== "Failure") {
-            return response.result;
-        };
-
-        return null;
-    };
-
-    /**
-     * Initialize new key registration
-     * @param code Code from email (unauthorized)
-     * @param sid User's session id (authorized)
-     * @returns object of {@link AuthOptions} on success
-     * @returns `null` on error
-     */
-    async InitializeNewKey(code: string): Promise<AuthOptions | null> {
-        if (!code.trim()) return null;
-
-        const response = await apiRegisterOptions(code);
-
-        if (response.result) {
-            return response.result;
-        };
-
-        return null;
-    };
-
-    /**
-     * Creates a user key and registers it in the system
-     * @param otp one time password from {@link InitializeNewKey} call
-     * @param options Authorization options, returned from {@link InitializeNewKey}
-     * @returns User's key to authorize via {@link SignInUserKey}
-     * @returns object of {@link ErrorObject} on error
-     */
-    async CreateUserKey(otp: string, options: AuthOptions): Promise<string | ErrorObject> {
-        if (!otp.trim() && otp.length !== 6) return null;
-
-        const challengeBuf = base64ToUint8Array(options.fido2_options.challenge) as Buffer;
-
-        const randomText = getRandomText();
-        const passKey = genSha256(randomText);
-        const { signature, public_key } = generateKeys(passKey, challengeBuf);
-
-        const data: LoginInfo = {
-            challenge_id: options.challenge_id,
-            code: otp.trim(),
-            public_key,
-            signature
-        };
-
-        const response = await RegisterKey(data);
-
-        if (response.result && response.result !== "Failure") {
-            return passKey;
+    return await this.ApiRequest<string>(
+      `auth/v1/reset_password?phone=${phone}`,
+      {
+        method: "GET",
+        headers: {
+          resolution: `${1}x${1}`,
+          device_guid: this.getDeviceGuid()
         }
+      }
+    );
+  };
 
-        return response.error;
+  /**
+   * Initialize new key registration
+   * @param code Code from email (unauthorized)
+   * @param sid User's session id (authorized)
+   * @returns object of {@link AuthOptions}
+   */
+  public async InitializeNewKey(emailCode: string): Promise<ApiResponse<AuthOptions>> {
+    if (!emailCode.trim()) {
+      return this.validationErrorResponse("Email code must be not empty");
+    }
+
+    return await this.ApiRequest<AuthOptions>(
+      `auth/v1/register_options${emailCode ? `?code=${emailCode}` : ""}`,
+      { method: "GET" }
+    );
+  };
+
+  /**
+   * Creates a user key and registers it in the system
+   * @param otp one time password from {@link InitializeNewKey} call
+   * @param options Authorization options, returned from {@link InitializeNewKey}
+   * @returns User's passKey string
+   */
+  public async CreateUserKey(otp: string, options: AuthOptions): Promise<ApiResponse<string>> {
+    if (!otp.trim() && otp.length !== 6) {
+      return this.validationErrorResponse("OTP must be not empty");
+    }
+
+    const challengeBuf = base64ToUint8Array(options.fido2_options.challenge) as Buffer;
+
+    const randomText = getRandomText();
+    const passKey = genSha256(randomText);
+    const { signature, public_key } = generateKeys(passKey, challengeBuf);
+
+    const data: LoginInfo = {
+      challenge_id: options.challenge_id,
+      code: otp.trim(),
+      public_key,
+      signature
     };
 
-    /**
-     * Close current session function
-     * @returns string result on success
-     * @returns `null` on error
-     */
-    public async Logout(): Promise<string | null> {
-        const response = await apiLogout();
+    const response = await this.ApiRequest<string>(
+      "auth/v1/register_key",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
 
-        if (response.result || !response.error) {
-            return response.result;
-        };
-
-        return null;
+    if (response.result && response.result !== "Failure") {
+      return {
+        result: passKey,
+        error: null
+      };
     }
+
+    return response;
+  };
+
+  /**
+   * Close current session function
+   * @returns string result `Success`/`Failure`
+   */
+  public async Logout(): Promise<ApiResponse<string>> {
+    return await this.ApiRequest<string>(`auth/v1/logout`, {
+      method: "GET"
+    });
+  }
+
+  private validationErrorResponse<T>(message: string): ApiResponse<T> {
+    return {
+      result: null,
+      error: {
+        code: -1,
+        message
+      }
+    };
+  }
+
+  private getDeviceGuid(): string {
+    if (!this.deviceGuid) {
+      this.deviceGuid = crypto.randomUUID();
+    }
+
+    return this.deviceGuid;
+  }
+
+  private async ApiRequest<T>(url: string, init?: RequestInit): Promise<ApiResponseExt<T>> {
+    const headers: Record<string, string> = {};
+    const defaultHeaders: Record<string, string> = {
+      Accept: "application/json"
+    };
+
+    try {
+      const response = await fetch(this.BaseUrl + url, {
+        credentials: "include",
+        ...init,
+        headers: {
+          ...defaultHeaders,
+          ...init.headers,
+          ...(this.sessionId ? {Cookie: `sid=${this.sessionId}`} : {})
+        }
+      });
+
+      if (response.ok) {
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+
+        return {
+          ...(await response.json()) as ApiResponseExt<T>,
+          headers
+        }
+      } else {
+        return {
+          error: { message: `Status: ${response.status}. ${response?.statusText}` },
+          headers
+        }
+      }
+    } catch (e) {
+      return {
+        error: { message: e?.message },
+        headers: null
+      };
+    }
+  };
 }

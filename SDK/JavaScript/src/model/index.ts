@@ -5,8 +5,11 @@ export interface ErrorObject {
 
 export interface ApiResponse<T> {
   error?: ErrorObject | null;
-  id?: number;
   result?: T | null;
+}
+
+export interface ApiResponseExt<T> extends ApiResponse<T> {
+  id?: number;
   headers?: Record<string, string> | null;
 }
 
