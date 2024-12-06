@@ -16,9 +16,9 @@ AUTH_API_URL=https://test-project.api/
 The `signInUserKey` function is used to obtain the cookie:
 
 ```ts
-var client = new AuthProxyClient();
+var client = new AuthProxyClient(<YOUR_BASE_URL>);
 
-await client.signInUserKey(`<YOUR_USER_KEY>`);
+await client.signInUserKey(<YOUR_USER_KEY>);
 
 // Returns sessionId string if session exists
 // null if session not found
