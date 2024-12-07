@@ -218,7 +218,8 @@ export class AuthProxyClient {
   private async ApiRequest<T>(url: string, init?: RequestInit): Promise<ApiResponseExt<T>> {
     const headers: Record<string, string> = {};
     const defaultHeaders: Record<string, string> = {
-      Accept: "application/json"
+      Accept: "application/json",
+      "Content-Type": "application/json"
     };
 
     try {
@@ -228,7 +229,7 @@ export class AuthProxyClient {
         headers: {
           ...defaultHeaders,
           ...init.headers,
-          ...(this.sessionId ? {Cookie: `sid=${this.sessionId}`} : {})
+          ...(this.sessionId ? { Cookie: `sid=${this.sessionId}` } : {})
         }
       });
 
