@@ -196,7 +196,7 @@ export class AuthProxyClient {
    * @returns `true` on success
    * @returns `false` on error
    */
-  public Subscribe(handleMessage: (object: unknown) => void = () => {}): boolean {
+  public Subscribe(handleMessage: (object: unknown) => Promise<void> = async () => {}): boolean {
     if (this.isConnectedES || !this.sessionId) {
       return false;
     }
@@ -213,14 +213,16 @@ export class AuthProxyClient {
           })
       });
 
-      this.esLink.onmessage = (event: MessageEvent<{ data: unknown }>) => {
+      this.esLink.onmessage = async (event: MessageEvent<{ data: unknown }>) => {
         var message = this.getMessageFromEvent(event.data);
-        handleMessage(message);
+        await handleMessage(message);
       };
 
       this.esLink.onerror = (error: unknown) => {
         console.error("EventSource error:", error);
       };
+
+      this.isConnectedES = true;
     } catch (error) {
       console.error("EventSource error:", error);
       return false;
@@ -240,6 +242,7 @@ export class AuthProxyClient {
     }
 
     this.esLink.close();
+    this.isConnectedES = false;
 
     return true;
   }
