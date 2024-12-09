@@ -11,9 +11,13 @@ import {
 import formatAsNumber from "./utils/formatAsNumber";
 import getRandomText from "./utils/getRandomText";
 import genSha256 from "./utils/genSha256";
+import { EventSource } from "eventsource";
 
 export class AuthProxyClient {
   public readonly BaseUrl: string = null;
+
+  private esLink: EventSource = null;
+  private isConnectedES: boolean = false;
   private sessionId: string | null = null;
   private deviceGuid: string | null = null;
 
@@ -188,6 +192,59 @@ export class AuthProxyClient {
   };
 
   /**
+   * Subscribe app to server EventSource
+   * @returns `true` on success
+   * @returns `false` on error
+   */
+  public Subscribe(handleMessage: (object: unknown) => void = () => {}): boolean {
+    if (this.isConnectedES || !this.sessionId) {
+      return false;
+    }
+
+    try {
+      this.esLink = new EventSource(`${this.BaseUrl}auth/v1/Subscribe`, {
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            headers: {
+              ...init.headers,
+              Cookie: `sid=${this.sessionId}`
+            }
+          })
+      });
+
+      this.esLink.onmessage = (event: MessageEvent<{ data: unknown }>) => {
+        var message = this.getMessageFromEvent(event.data);
+        handleMessage(message);
+      };
+
+      this.esLink.onerror = (error: unknown) => {
+        console.error("EventSource error:", error);
+      };
+    } catch (error) {
+      console.error("EventSource error:", error);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Unsubscribes from EventSource
+   * @returns `true` on success
+   * @returns `false` on error
+   */
+  public Unsubscribe(): boolean {
+    if (!this.isConnectedES) {
+      return false;
+    }
+
+    this.esLink.close();
+
+    return true;
+  }
+
+  /**
    * Close current session function
    * @returns string result `Success`/`Failure`
    */
@@ -213,6 +270,24 @@ export class AuthProxyClient {
     }
 
     return this.deviceGuid;
+  }
+
+  private getMessageFromEvent(message: unknown) {
+    let jsonValue: unknown = null;
+    console.log("Message received:", message);
+
+    if (typeof message !== "string") {
+      console.log(message);
+      return;
+    }
+
+    try {
+      jsonValue = JSON.parse(message);
+    } catch (error) {
+      console.error("Error parsing message:", error);
+    }
+
+    return jsonValue;
   }
 
   private async ApiRequest<T>(url: string, init?: RequestInit): Promise<ApiResponseExt<T>> {

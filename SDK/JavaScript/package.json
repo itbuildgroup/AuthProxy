@@ -21,6 +21,7 @@
   "dependencies": {
     "buffer": "^6.0.3",
     "elliptic": "^6.5.4",
+    "eventsource": "^3.0.1",
     "sha256": "^0.2.0"
   },
   "engines": {
