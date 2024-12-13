@@ -197,7 +197,7 @@ export class AuthProxyClient {
    * @returns `true` on success
    * @returns `false` on error
    */
-  public Subscribe(handleMessage: (object: unknown) => Promise<void> = async () => {}): boolean {
+  public Subscribe(handleMessage: (object: unknown) => Promise<void> = async () => { }): boolean {
     if (this.isConnectedES || !this.sessionId) {
       return false;
     }
@@ -270,7 +270,23 @@ export class AuthProxyClient {
 
   private getDeviceGuid(): string {
     if (!this.deviceGuid) {
-      this.deviceGuid = uuidV4();
+      function getRandomUint8Array(): Uint8Array {
+        const arr = new Uint8Array(16);
+
+        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+          crypto.getRandomValues(arr);
+        } else {
+          for (let i = 0; i < 16; i++) {
+            arr[i] = Math.floor(Math.random() * 256);
+          }
+        }
+
+        return arr;
+      }
+
+      this.deviceGuid = uuidV4({
+        random: getRandomUint8Array()
+      });
     }
 
     return this.deviceGuid;
