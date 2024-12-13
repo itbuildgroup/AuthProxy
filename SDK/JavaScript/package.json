@@ -1,6 +1,6 @@
 {
   "name": "@itbuild/auth.proxy",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "commonjs",
   "main": "dist/auth_proxy.js",
   "repository": {
@@ -22,10 +22,11 @@
     "buffer": "^6.0.3",
     "elliptic": "^6.5.4",
     "eventsource": "^3.0.1",
-    "sha256": "^0.2.0"
+    "sha256": "^0.2.0",
+    "uuid": "^11.0.3"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "@types/elliptic": "^6.4.18",

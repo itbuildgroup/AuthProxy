@@ -12,6 +12,7 @@ import formatAsNumber from "./utils/formatAsNumber";
 import getRandomText from "./utils/getRandomText";
 import genSha256 from "./utils/genSha256";
 import { EventSource } from "eventsource";
+import { v4 as uuidV4 } from "uuid";
 
 export class AuthProxyClient {
   public readonly BaseUrl: string = null;
@@ -269,7 +270,7 @@ export class AuthProxyClient {
 
   private getDeviceGuid(): string {
     if (!this.deviceGuid) {
-      this.deviceGuid = crypto.randomUUID();
+      this.deviceGuid = uuidV4();
     }
 
     return this.deviceGuid;
