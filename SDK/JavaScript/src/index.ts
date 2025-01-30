@@ -20,13 +20,16 @@ import { version } from '../package.json';
 export class AuthProxyClient {
   public readonly BaseUrl: string = null;
 
+  private userKey: string = null;
   private esLink: EventSource = null;
+  private isConnected: boolean = false;
   private isConnectedES: boolean = false;
   private sessionId: string | null = null;
   private deviceGuid: string | null = null;
 
-  constructor(baseUrl: string) {
+  constructor(userKey: string, baseUrl: string) {
     this.BaseUrl = baseUrl;
+    this.userKey = userKey;
   }
 
   /**
@@ -94,6 +97,21 @@ export class AuthProxyClient {
 
     return loginResponse;
   };
+
+  /**
+   * Create new session
+   * @returns `true` on success
+   * @returns `false` on error
+   */
+  public async Connect(): Promise<boolean> {
+    if (this.isConnected) {
+      return this.isConnected;
+    }
+
+    const response = await this.SignInUserKey(this.userKey);
+
+    return !response.error && response.result !== 'Failure';
+  }
 
   /**
    * Get server info
@@ -355,7 +373,7 @@ export class AuthProxyClient {
     };
 
     try {
-      const response = await fetch(this.BaseUrl + url, {
+      const request = fetch(this.BaseUrl + url, {
         credentials: "include",
         ...init,
         headers: {
@@ -364,6 +382,16 @@ export class AuthProxyClient {
           ...(this.sessionId ? { Cookie: `sid=${this.sessionId}` } : {})
         }
       });
+
+      var response = await request;
+
+      // Try to reconnect on 401
+      if (response.status === 401) {
+        this.isConnected = false;
+        this.Connect();
+
+        response = await request;
+      }
 
       if (response.ok) {
         response.headers.forEach((value, key) => {
