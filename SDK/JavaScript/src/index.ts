@@ -13,6 +13,9 @@ import getRandomText from "./utils/getRandomText";
 import genSha256 from "./utils/genSha256";
 import { EventSource } from "eventsource";
 import { v4 as uuidV4 } from "uuid";
+import * as fs from 'fs';
+import * as path from 'path';
+import { version } from '../package.json';
 
 export class AuthProxyClient {
   public readonly BaseUrl: string = null;
@@ -77,8 +80,9 @@ export class AuthProxyClient {
         method: "POST",
         body: JSON.stringify(data),
         headers: {
-          resolution: `${1}x${1}`,
-          device_guid: this.getDeviceGuid()
+          resolution: 'console',
+          device_guid: this.getDeviceGuid(),
+          "User-Agent": `AuthProxy SDK v.${version}`
         }
       }
     );
@@ -126,8 +130,9 @@ export class AuthProxyClient {
       {
         method: "GET",
         headers: {
-          resolution: `${1}x${1}`,
-          device_guid: this.getDeviceGuid()
+          resolution: 'console',
+          device_guid: this.getDeviceGuid(),
+          "User-Agent": `AuthProxy SDK v.${version}`
         }
       }
     );
@@ -269,24 +274,56 @@ export class AuthProxyClient {
   }
 
   private getDeviceGuid(): string {
-    if (!this.deviceGuid) {
-      function getRandomUint8Array(): Uint8Array {
-        const arr = new Uint8Array(16);
+    // Return deviceGuid if exists
+    if (this.deviceGuid) {
+      return this.deviceGuid;
+    }
 
-        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-          crypto.getRandomValues(arr);
-        } else {
-          for (let i = 0; i < 16; i++) {
-            arr[i] = Math.floor(Math.random() * 256);
-          }
+    const configPath = path.join(__dirname, 'config.json');
+
+    // Try to get deviceGuid from config.json
+    let configData: { deviceGuid?: string } = {};
+
+    try {
+      if (fs.existsSync(configPath)) {
+        const fileContent = fs.readFileSync(configPath, 'utf-8');
+        configData = JSON.parse(fileContent);
+      }
+    } catch (error) {
+      console.error('Error reading config.json:', error);
+    }
+
+    // Return deviceGuid if found in file
+    if (configData.deviceGuid) {
+      this.deviceGuid = configData.deviceGuid;
+      return this.deviceGuid;
+    }
+
+    // Generate new deviceGuid
+    function getRandomUint8Array(): Uint8Array {
+      const arr = new Uint8Array(16);
+
+      if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+        crypto.getRandomValues(arr);
+      } else {
+        for (let i = 0; i < 16; i++) {
+          arr[i] = Math.floor(Math.random() * 256);
         }
-
-        return arr;
       }
 
-      this.deviceGuid = uuidV4({
-        random: getRandomUint8Array()
-      });
+      return arr;
+    }
+
+    this.deviceGuid = uuidV4({
+      random: getRandomUint8Array()
+    });
+
+    // Save deviceGuid to config.json
+    try {
+      const newConfigData = { ...configData, deviceGuid: this.deviceGuid };
+      fs.writeFileSync(configPath, JSON.stringify(newConfigData, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('Error trying create config.json file:', error);
     }
 
     return this.deviceGuid;

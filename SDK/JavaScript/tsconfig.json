@@ -8,6 +8,7 @@
         "strict": false,
         "removeComments": false,
         "esModuleInterop": true,
+        "resolveJsonModule": true, 
         "moduleResolution": "node",
         "sourceMap": true,
         "lib": [
