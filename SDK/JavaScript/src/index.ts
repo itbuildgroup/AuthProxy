@@ -297,9 +297,9 @@ export class AuthProxyClient {
       return this.deviceGuid;
     }
 
-    const configPath = path.join(__dirname, 'config.json');
+    const configPath = path.join(process.cwd(), 'authProxyConfig.json');
 
-    // Try to get deviceGuid from config.json
+    // Try to get deviceGuid from authProxyConfig.json
     let configData: { deviceGuid?: string } = {};
 
     try {
@@ -308,7 +308,7 @@ export class AuthProxyClient {
         configData = JSON.parse(fileContent);
       }
     } catch (error) {
-      console.error('Error reading config.json:', error);
+      console.error('Error reading authProxyConfig.json:', error);
     }
 
     // Return deviceGuid if found in file
@@ -336,12 +336,12 @@ export class AuthProxyClient {
       random: getRandomUint8Array()
     });
 
-    // Save deviceGuid to config.json
+    // Save deviceGuid to authProxyConfig.json
     try {
       const newConfigData = { ...configData, deviceGuid: this.deviceGuid };
       fs.writeFileSync(configPath, JSON.stringify(newConfigData, null, 2), 'utf-8');
     } catch (error) {
-      console.error('Error trying create config.json file:', error);
+      console.error('Error trying create authProxyConfig.json file:', error);
     }
 
     return this.deviceGuid;
