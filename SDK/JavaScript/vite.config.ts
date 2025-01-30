@@ -11,11 +11,12 @@ export default defineConfig({
       fileName: `auth_proxy`,
     },
     rollupOptions: {
-      external: [],
+      external: ['fs', 'path'],
       output: {
         globals: {},
       },
     },
+    target: 'node18'
   },
   resolve: {
     alias: {
