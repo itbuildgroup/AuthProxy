@@ -17,6 +17,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { version } from '../package.json';
 
+export * from './model';
+
 export class AuthProxyClient {
   public readonly BaseUrl: string = null;
 
