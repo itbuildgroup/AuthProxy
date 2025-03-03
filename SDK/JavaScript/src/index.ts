@@ -93,8 +93,8 @@ export class AuthProxyClient {
     );
 
     if (loginResponse.result && loginResponse.result !== "Failure") {
-      let sid = loginResponse.headers['set-cookie'].match(/sid=([^;]+)/)[1];
-      this.sessionId = sid;
+      this.sessionId = loginResponse.headers['set-cookie'].match(/sid=([^;]+)/)[1];
+      this.isConnected = true;
     }
 
     return loginResponse;
