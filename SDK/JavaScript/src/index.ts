@@ -102,11 +102,12 @@ export class AuthProxyClient {
 
   /**
    * Create new session
+   * @param force create session even if session is active
    * @returns `true` on success
    * @returns `false` on error
    */
-  public async Connect(): Promise<boolean> {
-    if (this.isConnected) {
+  public async Connect(force: boolean = false): Promise<boolean> {
+    if (!force && this.isConnected) {
       return this.isConnected;
     }
 
@@ -390,7 +391,7 @@ export class AuthProxyClient {
       // Try to reconnect on 401
       if (response.status === 401) {
         this.isConnected = false;
-        this.Connect();
+        this.Connect(true);
 
         response = await request;
       }
