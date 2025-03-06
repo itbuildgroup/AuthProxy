@@ -391,7 +391,7 @@ export class AuthProxyClient {
       // Try to reconnect on 401
       if (response.status === 401) {
         this.isConnected = false;
-        this.Connect(true);
+        await this.Connect(true);
 
         response = await request;
       }
