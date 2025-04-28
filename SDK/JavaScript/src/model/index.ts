@@ -43,7 +43,7 @@ export interface AuthenticatorAssertionRawResponse {
 }
 
 export interface LoginInfo {
-  challenge_id?: number;
+  challenge_id?: string;
   code?: string | null;
   credential?: AuthenticatorAssertionRawResponse;
   credential_new?: AuthenticatorAttestationRawResponse;
@@ -64,7 +64,7 @@ export interface TelegramUserInfo {
 
 export interface AuthOptions {
   challenge?: string | null;
-  challenge_id?: number;
+  challenge_id?: string;
   fido2_options?: CredentialCreateOptions;
   rpId?: string | null;
   timeout?: number;
@@ -82,14 +82,14 @@ export interface CredentialCreateOptions {
   pubKeyCredParams?: any[] | null;
   rp?: PublicKeyCredentialRpEntity;
   status?: string | null;
-  timeout?: number;
+  timeout?: string;
   user?: any;
 }
 
 export interface UserLoginLog {
   device_info?: string | null;
   ip?: string | null;
-  key_id?: number;
+  key_id?: string;
   key_sign_num?: number;
   login_type?: string | null;
   utc_time?: string;
