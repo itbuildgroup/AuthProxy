@@ -112,8 +112,9 @@ export class AuthProxyClient {
     }
 
     const response = await this.SignInUserKey(this.userKey);
+    this.isConnected = !response.error && response.result !== 'Failure';
 
-    return !response.error && response.result !== 'Failure';
+    return this.isConnected;
   }
 
   /**
@@ -183,8 +184,8 @@ export class AuthProxyClient {
    * @returns User's passKey string
    */
   public async CreateUserKey(otp: string, options: AuthOptions): Promise<ApiResponse<string>> {
-    if (!otp.trim() && otp.length !== 6) {
-      return this.validationErrorResponse("OTP must be not empty");
+    if (!otp.trim() || otp.length !== 6) {
+      return this.validationErrorResponse("OTP must be not empty and must have 6 digits");
     }
 
     const challengeBuf = base64ToUint8Array(options.fido2_options.challenge) as Buffer;
@@ -279,9 +280,15 @@ export class AuthProxyClient {
    * @returns string result `Success`/`Failure`
    */
   public async Logout(): Promise<ApiResponse<string>> {
-    return await this.ApiRequest<string>(`auth/v1/logout`, {
+    var response = await this.ApiRequest<string>(`auth/v1/logout`, {
       method: "GET"
     });
+
+    if (response.result === "Success") {
+      this.isConnected = false;
+    }
+
+    return response;
   }
 
   private validationErrorResponse<T>(message: string): ApiResponse<T> {
@@ -376,7 +383,7 @@ export class AuthProxyClient {
     };
 
     try {
-      const request = fetch(this.BaseUrl + url, {
+      var response = await fetch(this.BaseUrl + url, {
         credentials: "include",
         ...init,
         headers: {
@@ -386,17 +393,25 @@ export class AuthProxyClient {
         }
       });
 
-      var response = await request;
-
       // Try to reconnect on 401
       if (response.status === 401) {
         this.isConnected = false;
         await this.Connect(true);
 
-        response = await request;
+        response = await fetch(this.BaseUrl + url, {
+          credentials: "include",
+          ...init,
+          headers: {
+            ...defaultHeaders,
+            ...init.headers,
+            ...(this.sessionId ? { Cookie: `sid=${this.sessionId}` } : {})
+          }
+        });
       }
 
       if (response.ok) {
+        this.isConnected = true;
+
         response.headers.forEach((value, key) => {
           headers[key] = value;
         });
@@ -406,6 +421,10 @@ export class AuthProxyClient {
           headers
         }
       } else {
+        if (response.status === 401) {
+          this.isConnected = false;
+        }
+
         return {
           error: { message: `Status: ${response.status}. ${response?.statusText}` },
           headers

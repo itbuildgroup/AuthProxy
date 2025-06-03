@@ -1,6 +1,6 @@
 {
   "name": "@itbuild/auth.proxy",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "type": "commonjs",
   "main": "dist/auth_proxy.js",
   "repository": {
